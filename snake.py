@@ -1,12 +1,14 @@
 # IMPORTING LIBS #
 
-import pygame
 import sys
 
-from random import randint, choice
-from pygame import font
+import os
 
+from random import randint, choice
+
+import pygame
 from pygame.locals import *
+from pygame import font
 
 # DECLARATION OF GLOBAL VARIABLES #
 
@@ -15,7 +17,7 @@ SCREEN_WIDTH = 500
 SCREEN_HEIGHT = 500
 
 # Grid variables
-GRID_SIZE = 20
+GRID_SIZE = 50
 GRID_WIDTH = SCREEN_WIDTH / GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT / GRID_SIZE
 
@@ -24,7 +26,6 @@ UP = (0, -1)
 DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
-
 
 # DECALRATION OF CLASES #
 
@@ -63,10 +64,12 @@ class Snake(object):
         # checking if snake touches himself
         if len(self.positions) > 2 and new in self.positions[2:]:
             self.reset()
+            return 0
         else:
             self.positions.insert(0, new)
             if len(self.positions) > self.lenght:
                 self.positions.pop()
+            return 1
 
     def reset(self):
         """ Resets the settings of the snake when the game is loose
@@ -82,9 +85,14 @@ class Snake(object):
             Draw the snake based on its positions on given surface
         """
         for position in self.positions:
-            rect = pygame.Rect(
-                (position[0]+2, position[1]+2), (GRID_SIZE-4, GRID_SIZE-4))
-            pygame.draw.rect(surface, self.color, rect)
+            if position == self.positions[0]:
+                rect = pygame.Rect(
+                    (position[0]+1, position[1]+1), (GRID_SIZE-2, GRID_SIZE-2))
+                pygame.draw.rect(surface, self.color, rect)
+            else:
+                rect = pygame.Rect(
+                    (position[0]+3, position[1]+3), (GRID_SIZE-6, GRID_SIZE-6))
+                pygame.draw.rect(surface, self.color, rect)
 
     def handle_keys(self):
         for event in pygame.event.get():
@@ -169,9 +177,24 @@ def main():
     while True:
         clock.tick(10)
 
+        end = False
+
         snake.handle_keys()
         drawGrid(surface)
-        snake.move()
+        if not snake.move():
+            pause = False
+            text_end = font.render(f'Vous avez perdu, Appuyez sur espace pour rejouer', True, (255, 255, 255), (0, 0, 0))
+            screen.blit(text_end, (10, SCREEN_HEIGHT/2 - 10))
+            pygame.display.update()
+            while not pause:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif event.type == KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            pause = True
+            end = True
 
         if snake.get_head_position() == food.position:
             snake.lenght += 1
@@ -181,6 +204,7 @@ def main():
         snake.draw(surface)
         food.draw(surface)
         screen.blit(surface, (0, 0))
+        
         text_score = font.render(f'Score : {snake.score}', 1, (0, 0, 0))
         screen.blit(text_score, (7, SCREEN_WIDTH - 20))
         pygame.display.update()
